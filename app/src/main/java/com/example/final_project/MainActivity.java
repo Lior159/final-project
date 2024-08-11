@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textview.MaterialTextView;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -54,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
                 checkRecordStatus();
             });
-    ActivityResultLauncher<String> locationPermissionRequest =
+    ActivityResultLauncher<String> recordPermissionRequest =
             registerForActivityResult(new ActivityResultContracts
                             .RequestPermission(), result -> {
                         if (result) {
@@ -79,14 +80,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d("Test", System.currentTimeMillis() + "");
         findViews();
         initViews();
 
         storage = FirebaseStorage.getInstance();
         storageRef = storage.getReference();
 
-        audioFilePath = getExternalCacheDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".3gp";
+        audioFilePath = getFilesDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".3gp";
     }
 
     private void findViews() {
@@ -98,10 +98,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        main_BTN_start_record.setOnClickListener(v -> startRecord());
-        main_BTN_stop_record.setOnClickListener(v -> stopRecord());
+        main_BTN_start_record.setOnClickListener(v -> startService());
+        main_BTN_stop_record.setOnClickListener(v -> stopService());
         main_BTN_start_audio.setOnClickListener(v -> startAudio());
         main_BTN_stop_audio.setOnClickListener(v -> stopAudio());
+    }
+
+    private void startService() {
+        sendActionToService(RecordService.START_FOREGROUND_SERVICE);
+    }
+
+    private void stopService() {
+        sendActionToService(RecordService.STOP_FOREGROUND_SERVICE);
+    }
+
+    private void sendActionToService(String action) {
+        Intent intent = new Intent(this, RecordService.class);
+        intent.setAction(action);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+            // or
+            //ContextCompat.startForegroundService(this, startIntent);
+        } else {
+            startService(intent);
+        }
     }
 
     private void uploadAudioToFirebase() {
@@ -133,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
         if (player == null) {
             player = new MediaPlayer();
 
+
             try {
                 player.setDataSource(audioFilePath);
                 player.prepare();
@@ -150,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
             recorder.stop();
             recorder.release();
             recorder = null;
-            uploadAudioToFirebase();
+            FireBaseUtil.uploadAudioToFirebase(this, audioFilePath);
 
             main_LBL_status.setText("Recording stopped");
         }
@@ -176,11 +198,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void checkRecordStatus() {
         String permissionStatus = checkRecordPermissionStatus(this);
         if (permissionStatus != null)
-            askForLocationPermissions(checkRecordPermissionStatus(this));
+            askForRecordPermissions(checkRecordPermissionStatus(this));
     }
 
     private String checkRecordPermissionStatus(Context context) {
@@ -189,11 +210,11 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    private void askForLocationPermissions(String permission) {
+    private void askForRecordPermissions(String permission) {
         if (permission.equals(Manifest.permission.RECORD_AUDIO) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             buildAlertMessageManuallyPermission(permission);
         else
-            locationPermissionRequest.launch(permission);
+            recordPermissionRequest.launch(permission);
     }
 
     private void buildAlertMessageManuallyPermission(String permission) {
@@ -217,10 +238,20 @@ public class MainActivity extends AppCompatActivity {
         appSettingsResultLauncher.launch(intent);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        stopAudio();
-        stopRecord();
-    }
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        stopAudio();
+//        stopRecord();
+//    }
+
+//    private void getFCMToken() {
+//        // Get updated InstanceID token.
+//        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+//            if (task.isSuccessful()) {
+////                FireBaseUtil.saveTokenToDatabase(task.getResult());
+//                Log.i("Firebase Messaging Token", task.getResult());
+//            }
+//        });
+//    }
 }

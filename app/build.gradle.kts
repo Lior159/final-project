@@ -40,4 +40,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation(libs.google.firebase.storage)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.database)
+
 }
