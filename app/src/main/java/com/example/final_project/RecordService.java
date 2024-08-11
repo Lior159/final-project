@@ -40,14 +40,13 @@ public class RecordService extends Service {
     private MediaRecorder recorder = null;
     private MediaPlayer mediaPlayer = null;
     String audioFilePath = null;
-
     private boolean isServiceRunning = false;
 
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 //        audioFilePath = getExternalCacheDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".3gp";
-        audioFilePath = getFilesDir().getAbsolutePath() + "/lior.3gp";
+        audioFilePath = getFilesDir().getAbsolutePath() + "/audio_file.3gp";
         File file = new File(audioFilePath);
 
         if (intent == null || intent.getAction() == null) {
@@ -89,6 +88,12 @@ public class RecordService extends Service {
                     return START_STICKY;
                 }
                 startAlert();
+                break;
+            case STOP_ALERT:
+                if (!isServiceRunning) {
+                    return START_STICKY;
+                }
+                stopAlert();
                 break;
 
         }

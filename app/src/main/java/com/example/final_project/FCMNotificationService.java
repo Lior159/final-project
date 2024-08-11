@@ -30,6 +30,10 @@ public class FCMNotificationService extends FirebaseMessagingService {
             sendActionToService(RecordService.START_RECORDING);
         } else if (RecordService.STOP_RECORDING.equalsIgnoreCase(action)) {
             sendActionToService(RecordService.STOP_RECORDING);
+        }else if (RecordService.START_ALERT.equalsIgnoreCase(action)) {
+            sendActionToService(RecordService.START_ALERT);
+        }else if (RecordService.STOP_ALERT.equalsIgnoreCase(action)) {
+            sendActionToService(RecordService.STOP_ALERT);
         }
     }
 
