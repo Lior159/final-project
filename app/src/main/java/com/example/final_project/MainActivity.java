@@ -38,19 +38,10 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
-    MaterialButton main_BTN_start_record;
-    MaterialButton main_BTN_stop_record;
-    MaterialButton main_BTN_start_audio;
-    MaterialButton main_BTN_stop_audio;
+    MaterialButton main_BTN_start_service;
+    MaterialButton main_BTN_stop_service;
+    MaterialButton main_BTN_stop_alert;
     MaterialTextView main_LBL_status;
-    String audioFilePath = null;
-    boolean isRecording = false;
-    boolean isPlaying = false;
-    MediaPlayer player = null;
-    MediaRecorder recorder = null;
-    private FirebaseStorage storage;
-    private StorageReference storageRef;
-
     ActivityResultLauncher<Intent> appSettingsResultLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), o -> {
                 checkRecordStatus();
@@ -82,33 +73,33 @@ public class MainActivity extends AppCompatActivity {
 
         findViews();
         initViews();
-
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
-
-        audioFilePath = getFilesDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".3gp";
     }
 
     private void findViews() {
-        main_BTN_start_record = findViewById(R.id.main_BTN_start_record);
-        main_BTN_stop_record = findViewById(R.id.main_BTN_stop_record);
-        main_BTN_start_audio = findViewById(R.id.main_BTN_start_audio);
-        main_BTN_stop_audio = findViewById(R.id.main_BTN_stop_audio);
+        main_BTN_start_service = findViewById(R.id.main_BTN_start_service);
+        main_BTN_stop_service = findViewById(R.id.main_BTN_stop_service);
+        main_BTN_stop_alert = findViewById(R.id.main_BTN_stop_alert);
+
         main_LBL_status = findViewById(R.id.main_LBL_status);
     }
 
     private void initViews() {
-        main_BTN_start_record.setOnClickListener(v -> startService());
-        main_BTN_stop_record.setOnClickListener(v -> stopService());
-        main_BTN_start_audio.setOnClickListener(v -> startAudio());
-        main_BTN_stop_audio.setOnClickListener(v -> stopAudio());
+        main_BTN_start_service.setOnClickListener(v -> startService());
+        main_BTN_stop_service.setOnClickListener(v -> stopService());
+        main_BTN_stop_alert.setOnClickListener(v -> stopAlert());
+    }
+
+    private void stopAlert() {
+        sendActionToService(RecordService.STOP_ALERT);
     }
 
     private void startService() {
+        main_LBL_status.setText("Service ON");
         sendActionToService(RecordService.START_FOREGROUND_SERVICE);
     }
 
     private void stopService() {
+        main_LBL_status.setText("Service OFF");
         sendActionToService(RecordService.STOP_FOREGROUND_SERVICE);
     }
 
@@ -125,79 +116,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadAudioToFirebase() {
-        Uri fileUri = Uri.fromFile(new File(audioFilePath));
-        StorageReference audioRef = storageRef.child("audios/" + fileUri.getLastPathSegment());
-        UploadTask uploadTask = audioRef.putFile(fileUri);
-
-        uploadTask.addOnSuccessListener(taskSnapshot -> {
-            Toast.makeText(this, "Upload successful!", Toast.LENGTH_SHORT).show();
-            audioRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                String downloadUrl = uri.toString();
-                // Handle the download URL
-            });
-        }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    private void stopAudio() {
-        if (player != null && player.isPlaying()) {
-            player.stop();
-            player.release();
-            player = null;
-            main_LBL_status.setText("Audio stopped");
-        }
-    }
-
-    private void startAudio() {
-        if (player == null) {
-            player = new MediaPlayer();
-
-
-            try {
-                player.setDataSource(audioFilePath);
-                player.prepare();
-                player.start();
-            } catch (IOException e) {
-                Log.e("Audio", "prepare() failed");
-            }
-
-            main_LBL_status.setText("Audio started");
-        }
-    }
-
-    private void stopRecord() {
-        if (recorder != null) {
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-            FireBaseUtil.uploadAudioToFirebase(this, audioFilePath);
-
-            main_LBL_status.setText("Recording stopped");
-        }
-    }
-
-    private void startRecord() {
-        if (recorder == null) {
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            recorder.setOutputFile(audioFilePath);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-            try {
-                recorder.prepare();
-            } catch (IOException e) {
-                Log.e("Audio", "prepare() failed");
-            }
-
-            recorder.start();
-
-            main_LBL_status.setText("Recording started");
-        }
-    }
-
     private void checkRecordStatus() {
         String permissionStatus = checkRecordPermissionStatus(this);
         if (permissionStatus != null)
@@ -205,13 +123,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String checkRecordPermissionStatus(Context context) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-            return Manifest.permission.RECORD_AUDIO;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE) != PackageManager.PERMISSION_GRANTED)
+            return Manifest.permission.FOREGROUND_SERVICE_MICROPHONE;
         return null;
     }
 
     private void askForRecordPermissions(String permission) {
-        if (permission.equals(Manifest.permission.RECORD_AUDIO) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        if (permission.equals(Manifest.permission.FOREGROUND_SERVICE_MICROPHONE) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
             buildAlertMessageManuallyPermission(permission);
         else
             recordPermissionRequest.launch(permission);
@@ -237,21 +155,4 @@ public class MainActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         appSettingsResultLauncher.launch(intent);
     }
-
-//    @Override
-//    protected void onStop() {
-//        super.onStop();
-//        stopAudio();
-//        stopRecord();
-//    }
-
-//    private void getFCMToken() {
-//        // Get updated InstanceID token.
-//        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
-//            if (task.isSuccessful()) {
-////                FireBaseUtil.saveTokenToDatabase(task.getResult());
-//                Log.i("Firebase Messaging Token", task.getResult());
-//            }
-//        });
-//    }
 }

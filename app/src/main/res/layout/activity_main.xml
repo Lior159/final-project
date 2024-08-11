@@ -9,28 +9,22 @@
     tools:context=".MainActivity">
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/main_BTN_start_record"
+        android:id="@+id/main_BTN_start_service"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Record"/>
+        android:text="Start Service"/>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/main_BTN_stop_record"
+        android:id="@+id/main_BTN_stop_service"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Stop Record"/>
+        android:text="Stop Service"/>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/main_BTN_start_audio"
+        android:id="@+id/main_BTN_stop_alert"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Audio"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/main_BTN_stop_audio"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop Audio"/>
+        android:text="Stop Alert"/>
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/main_LBL_status"

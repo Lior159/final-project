@@ -10,6 +10,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.IBinder;
@@ -27,6 +28,8 @@ public class RecordService extends Service {
 
     public static final String START_FOREGROUND_SERVICE = "START_FOREGROUND_SERVICE";
     public static final String STOP_FOREGROUND_SERVICE = "STOP_FOREGROUND_SERVICE";
+    public static final String START_ALERT = "START_ALERT";
+    public static final String STOP_ALERT = "STOP_ALERT";
     public static final String START_RECORDING = "START_RECORDING";
     public static final String STOP_RECORDING = "STOP_RECORDING";
     private static final int NOTIFICATION_ID = 195;
@@ -35,6 +38,7 @@ public class RecordService extends Service {
     public static String MAIN_ACTION = "com.example.fina_project.recordService.action.main";
     private NotificationCompat.Builder notificationBuilder;
     private MediaRecorder recorder = null;
+    private MediaPlayer mediaPlayer = null;
     String audioFilePath = null;
 
     private boolean isServiceRunning = false;
@@ -80,9 +84,35 @@ public class RecordService extends Service {
                 }
                 stopRecording();
                 break;
+            case START_ALERT:
+                if (!isServiceRunning) {
+                    return START_STICKY;
+                }
+                startAlert();
+                break;
+
         }
 
         return START_STICKY;
+    }
+
+    private void startAlert() {
+        if (mediaPlayer == null) {
+            mediaPlayer = MediaPlayer.create(this, R.raw.alert_sound); // Replace with your audio file name
+            mediaPlayer.setLooping(true); // Set looping if you want the alert to repeat
+        }
+        mediaPlayer.start();
+        Log.d("RecordService", "Alert started");
+    }
+
+    // Method to stop playing alert sound
+    private void stopAlert() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+            Log.d("RecordService", "Alert stopped");
+        }
     }
 
     private void startRecording() {
