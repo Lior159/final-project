@@ -1,7 +1,5 @@
 package com.example.final_project;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,33 +7,18 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textview.MaterialTextView;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-
-import java.io.File;
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,7 +26,10 @@ public class MainActivity extends AppCompatActivity {
     MaterialButton main_BTN_stop_service;
     MaterialButton main_BTN_stop_alert;
     MaterialTextView main_LBL_status;
-    private boolean isAproved = false;
+    private boolean isApproved = false;
+    private boolean isNotificationApproved = false;
+    private boolean isRecordApproved = false;
+
     private static final String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
     private static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
     private static final int PERMISSION_REQUEST_CODE = 952;
@@ -56,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         findViews();
         initViews();
         requestRunTimePermissions();
+        Log.d("TAG", isApproved + "");
     }
 
     private void findViews() {
@@ -77,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startService() {
-        if (isAproved) {
+        if (isApproved) {
             main_LBL_status.setText("Service ON");
             sendActionToService(RecordService.START_FOREGROUND_SERVICE);
         } else {
@@ -90,21 +77,30 @@ public class MainActivity extends AppCompatActivity {
         sendActionToService(RecordService.STOP_FOREGROUND_SERVICE);
     }
 
+    private String checkPermission(){
+        if (ContextCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            return RECORD_AUDIO;
+        else if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return POST_NOTIFICATIONS;
+        }
+        isApproved = true;
+        return null;
+    }
+
     private void requestRunTimePermissions() {
-        
-        if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+        String permission = checkPermission();
+        if (permission == null) {
             Log.d("TAG", "requestRunTimePermissions: granted");
             Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
-            isAproved = true;
-        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, RECORD_AUDIO)) {
+        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("Permission to access the microphone is required to use this app")
-                    .setTitle("Permission Required")
+            builder.setMessage(permission + " Permission required to use this app")
+                    .setTitle(permission + " Permission Required")
                     .setCancelable(false)
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, PERMISSION_REQUEST_CODE);
                             dialog.dismiss();
                         }
                     })
@@ -112,22 +108,49 @@ public class MainActivity extends AppCompatActivity {
 
             builder.show();
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+            Log.d("TAG", "requestRunTimePermissions: not granted");
+            ActivityCompat.requestPermissions(this, new String[]{permission}, PERMISSION_REQUEST_CODE);
         }
     }
+
+//    private void requestRunTimePermissions() {
+//
+//        if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+//            Log.d("TAG", "requestRunTimePermissions: granted");
+//            Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
+//            isAproved = true;
+//        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, RECORD_AUDIO)) {
+//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//            builder.setMessage("Permission to access the microphone is required to use this app")
+//                    .setTitle("Permission Required")
+//                    .setCancelable(false)
+//                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialog, int which) {
+//                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+//                            dialog.dismiss();
+//                        }
+//                    })
+//                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+//
+//            builder.show();
+//        } else {
+//            ActivityCompat.requestPermissions(this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+//        }
+//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
+        Log.d("TAG", "onRequestPermissionsResult: " + permissions[0]);
         if (requestCode == PERMISSION_REQUEST_CODE) {// If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                isAproved = true;
                 Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
-            } else if (!ActivityCompat.shouldShowRequestPermissionRationale(this, RECORD_AUDIO)) {
+                requestRunTimePermissions();
+            } else if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[0])) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setMessage("Please allow Microphone permission from settings menu")
-                        .setTitle("Permission Required")
+                builder.setMessage("Please allow " + permissions[0] + " permission from settings menu")
+                        .setTitle(permissions[0] + " Permission Required")
                         .setCancelable(false)
                         .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                         .setPositiveButton("Settings", new DialogInterface.OnClickListener() {
@@ -147,15 +170,6 @@ public class MainActivity extends AppCompatActivity {
                 requestRunTimePermissions();
             }
         }
-    }
-
-    private String checkPermission(){
-        if (ContextCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-            return RECORD_AUDIO;
-        else if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return POST_NOTIFICATIONS;
-        }
-        return null;
     }
 
     private void sendActionToService(String action) {
