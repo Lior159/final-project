@@ -7,9 +7,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,23 +28,22 @@ public class MainActivity extends AppCompatActivity {
     MaterialButton main_BTN_stop_service;
     MaterialButton main_BTN_stop_alert;
     MaterialTextView main_LBL_status;
-    private boolean isApproved = false;
-    private static final String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
-    private static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
-    private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
-    private static final String ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
-    private static final String ACCESS_BACKGROUND_LOCATION = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
+//    private boolean isApproved = false;
+    public static final String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
+    public static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
+    public static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    public static final String ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    public static final String ACCESS_BACKGROUND_LOCATION = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
     private static final int PERMISSION_REQUEST_CODE = 952;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         findViews();
         initViews();
+
         requestRunTimePermissions();
-        Log.d("TAG", isApproved + "");
     }
 
     private void findViews() {
@@ -64,7 +65,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startService() {
-        if (isApproved) {
+        String permission = checkPermission();
+//        if (isApproved) {
+        if (isLocationEnabled() && permission == null) {
             main_LBL_status.setText("Service ON");
             sendActionToService(RecordService.START_FOREGROUND_SERVICE);
         } else {
@@ -75,6 +78,19 @@ public class MainActivity extends AppCompatActivity {
     private void stopService() {
         main_LBL_status.setText("Service OFF");
         sendActionToService(RecordService.STOP_FOREGROUND_SERVICE);
+    }
+
+    private void sendActionToService(String action) {
+        Intent intent = new Intent(this, RecordService.class);
+        intent.setAction(action);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+            // or
+            //ContextCompat.startForegroundService(this, startIntent);
+        } else {
+            startService(intent);
+        }
     }
 
     private String checkPermission(){
@@ -89,13 +105,15 @@ public class MainActivity extends AppCompatActivity {
         else if (ContextCompat.checkSelfPermission(this, ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED)
             return ACCESS_BACKGROUND_LOCATION;
 
-        isApproved = true;
+//        isApproved = true;
         return null;
     }
 
     private void requestRunTimePermissions() {
         String permission = checkPermission();
-        if (permission == null) {
+        if (!isLocationEnabled())
+            Toast.makeText(this, "Location Disabled", Toast.LENGTH_LONG).show();
+        else if (permission == null) {
             Log.d("TAG", "requestRunTimePermissions: granted");
             Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
         } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
@@ -152,16 +170,41 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void sendActionToService(String action) {
-        Intent intent = new Intent(this, RecordService.class);
-        intent.setAction(action);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-            // or
-            //ContextCompat.startForegroundService(this, startIntent);
+    private boolean isLocationEnabled() {
+        boolean isEnabled;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            isEnabled = lm.isLocationEnabled();
         } else {
-            startService(intent);
+            int mode = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+            isEnabled =  mode != Settings.Secure.LOCATION_MODE_OFF;
         }
+
+        if (!isEnabled) {
+            showLocationDisabledDialog();
+        }
+
+        return isEnabled;
+    }
+
+    private void showLocationDisabledDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Please enable Location Services ")
+                .setTitle("Location Services Disabled")
+                .setCancelable(false)
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setPositiveButton("Settings", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(intent);
+
+                        dialog.dismiss();
+                    }
+                });
+
+        builder.show();
     }
 }

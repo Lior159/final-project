@@ -17,6 +17,7 @@ import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -58,17 +60,17 @@ public class RecordService extends Service {
     private MediaPlayer mediaPlayer = null;
     String audioFilePath = null;
     private boolean isServiceRunning = false;
-    private FusedLocationProviderClient fusedLocationClient;
 
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 //        audioFilePath = getExternalCacheDir().getAbsolutePath() + "/" + System.currentTimeMillis() + ".3gp";
+
         audioFilePath = getFilesDir().getAbsolutePath() + "/audio_file.3gp";
         File file = new File(audioFilePath);
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        if (intent == null || intent.getAction() == null) {
+        if (intent == null || intent.getAction() == null || !checkPermission() || !isLocationEnabled()) {
             return START_STICKY;
         }
 
@@ -78,6 +80,7 @@ public class RecordService extends Service {
                 if (isServiceRunning) {
                     return START_STICKY;
                 }
+                notifyToUserForForegroundService(FOREGROUND_SERVICE_TYPE_MICROPHONE, MICROPHONE_NOTIFICATION_ID, MICROPHONE_CHANNEL_ID);
                 isServiceRunning = true;
                 Log.d("Service Status", "ON");
                 break;
@@ -270,6 +273,32 @@ public class RecordService extends Service {
         notificationBuilder.setContentText(content);
         final NotificationManager notificationManager = (NotificationManager) getSystemService(Service.NOTIFICATION_SERVICE);
         notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+    }
+
+    private boolean checkPermission(){
+        if (ContextCompat.checkSelfPermission(this, MainActivity.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        else if (ContextCompat.checkSelfPermission(this, MainActivity.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        else if (ContextCompat.checkSelfPermission(this, MainActivity.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        else if (ContextCompat.checkSelfPermission(this, MainActivity.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
+        else if (ContextCompat.checkSelfPermission(this, MainActivity.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
+
+//        isApproved = true;
+        return true;
+    }
+
+    private boolean isLocationEnabled() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            return lm.isLocationEnabled();
+        } else {
+            int mode = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+            return mode != Settings.Secure.LOCATION_MODE_OFF;
+        }
     }
 
     @Nullable
