@@ -27,11 +27,11 @@ public class MainActivity extends AppCompatActivity {
     MaterialButton main_BTN_stop_alert;
     MaterialTextView main_LBL_status;
     private boolean isApproved = false;
-    private boolean isNotificationApproved = false;
-    private boolean isRecordApproved = false;
-
     private static final String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
     private static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
+    private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final String ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String ACCESS_BACKGROUND_LOCATION = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
     private static final int PERMISSION_REQUEST_CODE = 952;
 
     @Override
@@ -80,9 +80,15 @@ public class MainActivity extends AppCompatActivity {
     private String checkPermission(){
         if (ContextCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
             return RECORD_AUDIO;
-        else if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        else if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             return POST_NOTIFICATIONS;
-        }
+        else if (ContextCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return ACCESS_COARSE_LOCATION;
+        else if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return ACCESS_FINE_LOCATION;
+        else if (ContextCompat.checkSelfPermission(this, ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return ACCESS_BACKGROUND_LOCATION;
+
         isApproved = true;
         return null;
     }
@@ -112,32 +118,6 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{permission}, PERMISSION_REQUEST_CODE);
         }
     }
-
-//    private void requestRunTimePermissions() {
-//
-//        if (ActivityCompat.checkSelfPermission(this, RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-//            Log.d("TAG", "requestRunTimePermissions: granted");
-//            Toast.makeText(this, "Permission Granted", Toast.LENGTH_LONG).show();
-//            isAproved = true;
-//        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, RECORD_AUDIO)) {
-//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//            builder.setMessage("Permission to access the microphone is required to use this app")
-//                    .setTitle("Permission Required")
-//                    .setCancelable(false)
-//                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialog, int which) {
-//                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
-//                            dialog.dismiss();
-//                        }
-//                    })
-//                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-//
-//            builder.show();
-//        } else {
-//            ActivityCompat.requestPermissions(this, new String[]{RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
-//        }
-//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -184,44 +164,4 @@ public class MainActivity extends AppCompatActivity {
             startService(intent);
         }
     }
-
-//    private void checkRecordStatus() {
-//        String permissionStatus = checkRecordPermissionStatus(this);
-//        if (permissionStatus != null)
-//            askForRecordPermissions(checkRecordPermissionStatus(this));
-//    }
-
-//    private String checkRecordPermissionStatus(Context context) {
-//        if (ContextCompat.checkSelfPermission(context, Manifest.permission.FOREGROUND_SERVICE_MICROPHONE) != PackageManager.PERMISSION_GRANTED)
-//            return Manifest.permission.FOREGROUND_SERVICE_MICROPHONE;
-//        return null;
-//    }
-//
-//    private void askForRecordPermissions(String permission) {
-//        if (permission.equals(Manifest.permission.RECORD_AUDIO) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-//            buildAlertMessageManuallyPermission(permission);
-//        else
-//            recordPermissionRequest.launch(permission);
-//    }
-//
-//    private void buildAlertMessageManuallyPermission(String permission) {
-//        if (permission == null) return;
-//
-//        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        String allow_message_type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? "Allow all the time" : "Allow";
-//
-//        builder.setMessage("You need to enable location permission manually." +
-//                        "\nOn the page that opens - click on PERMISSIONS, then on LOCATION and then check '" + allow_message_type + "'")
-//                .setCancelable(false)
-//                .setPositiveButton("OK", (dialog, which) -> openAppSettings())
-//                .setNegativeButton("Exit", (dialog, which) -> finish());
-//        builder.create().show();
-//    }
-//
-//    private void openAppSettings() {
-//        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-//                Uri.fromParts("package", getPackageName(), null));
-//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        appSettingsResultLauncher.launch(intent);
-//    }
 }

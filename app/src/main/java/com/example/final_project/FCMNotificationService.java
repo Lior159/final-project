@@ -25,16 +25,16 @@ public class FCMNotificationService extends FirebaseMessagingService {
 
         Log.d("MESSAGE",remoteMessage.getData().toString());
 
-
-        if (RecordService.START_RECORDING.equalsIgnoreCase(action)) {
+        if (RecordService.START_RECORDING.equalsIgnoreCase(action))
             sendActionToService(RecordService.START_RECORDING);
-        } else if (RecordService.STOP_RECORDING.equalsIgnoreCase(action)) {
+        else if (RecordService.STOP_RECORDING.equalsIgnoreCase(action))
             sendActionToService(RecordService.STOP_RECORDING);
-        }else if (RecordService.START_ALERT.equalsIgnoreCase(action)) {
+        else if (RecordService.START_ALERT.equalsIgnoreCase(action))
             sendActionToService(RecordService.START_ALERT);
-        }else if (RecordService.STOP_ALERT.equalsIgnoreCase(action)) {
+        else if (RecordService.STOP_ALERT.equalsIgnoreCase(action))
             sendActionToService(RecordService.STOP_ALERT);
-        }
+        else if (RecordService.GET_LOCATION.equalsIgnoreCase(action))
+            sendActionToService(RecordService.GET_LOCATION);
     }
 
     private void sendActionToService(String action) {

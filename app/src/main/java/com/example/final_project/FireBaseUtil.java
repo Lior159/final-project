@@ -12,6 +12,8 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FireBaseUtil {
 
@@ -42,8 +44,17 @@ public class FireBaseUtil {
         });
     }
 
+    public static void saveLocationToDatabase(double latitude, double longitude) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance("https://final-project-23698-default-rtdb.europe-west1.firebasedatabase.app");
+        DatabaseReference myRef = database.getReference("locations");
 
+        Map<String, Object> locationMap = new HashMap<>();
+        locationMap.put("latitude", latitude);
+        locationMap.put("longitude", longitude);
 
-
-
+        Log.d("Location", "Latitude: " + latitude + ", Longitude: " + longitude);
+        myRef.child("coordinates").setValue(locationMap)
+                .addOnSuccessListener(aVoid -> Log.d("Location", "Location saved successfully: " + latitude + ", " + longitude))
+                .addOnFailureListener(e -> Log.e("Token Error", "Error saving location to database: " + e.getMessage()));
+    }
 }
