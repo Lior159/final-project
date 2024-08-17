@@ -16,9 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FireBaseUtil {
+        private static final String FIREBASE_URL = "https://final-project-23698-default-rtdb.europe-west1.firebasedatabase.app";
+
 
     public static void saveTokenToDatabase(String token) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://final-project-23698-default-rtdb.europe-west1.firebasedatabase.app");
+        FirebaseDatabase database = FirebaseDatabase.getInstance(FIREBASE_URL);
         DatabaseReference myRef = database.getReference("tokens");
 
         myRef.child("token").setValue(token)
@@ -45,7 +47,7 @@ public class FireBaseUtil {
     }
 
     public static void saveLocationToDatabase(double latitude, double longitude) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://final-project-23698-default-rtdb.europe-west1.firebasedatabase.app");
+        FirebaseDatabase database = FirebaseDatabase.getInstance("FIREBASE_URL");
         DatabaseReference myRef = database.getReference("locations");
 
         Map<String, Object> locationMap = new HashMap<>();

@@ -68,7 +68,6 @@ public class RecordService extends Service {
 
         audioFilePath = getFilesDir().getAbsolutePath() + "/audio_file.3gp";
         File file = new File(audioFilePath);
-        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         if (intent == null || intent.getAction() == null || !checkPermission() || !isLocationEnabled()) {
             return START_STICKY;
@@ -127,7 +126,7 @@ public class RecordService extends Service {
                     return START_STICKY;
                 } else {
                     Log.d("Location Status", "Permission granted");
-                    fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+                    FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
                     fusedLocationClient.getLastLocation()
                             .addOnSuccessListener(new OnSuccessListener<Location>() {
                                 @Override
@@ -192,17 +191,6 @@ public class RecordService extends Service {
             recorder = null;
             FireBaseUtil.uploadAudioToFirebase(this, audioFilePath);
         }
-    }
-
-    public static boolean isMyServiceRunning(Context context) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> runs = manager.getRunningServices(Integer.MAX_VALUE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (RecordService.class.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void notifyToUserForForegroundService(int foregroundServiceType, int notificationId, String chanelId) {

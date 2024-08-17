@@ -28,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
     MaterialButton main_BTN_stop_service;
     MaterialButton main_BTN_stop_alert;
     MaterialTextView main_LBL_status;
-//    private boolean isApproved = false;
     public static final String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
     public static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
     public static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
